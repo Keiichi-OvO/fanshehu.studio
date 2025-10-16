@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F.B. - Level 5: 元游戏挑战 - 成为创造者</title>
+    <style>
+        :root {
+            --matrix-green: #00ff00;
+            --cyber-blue: #00ffff;
+            --neon-pink: #ff00ff;
+            --hacker-orange: #ff6600;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: var(--matrix-green);
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 矩阵数字雨背景 */
+        .matrix-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.8);
+            border-bottom: 2px solid var(--matrix-green);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glitch-text {
+            font-size: 3em;
+            font-weight: bold;
+            text-transform: uppercase;
+            position: relative;
+            display: inline-block;
+            animation: glitch 5s infinite;
+        }
+
+        .glitch-text::before,
+        .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glitch-text::before {
+            animation: glitch-1 0.5s infinite;
+            color: var(--neon-pink);
+            z-index: -1;
+        }
+
+        .glitch-text::after {
+            animation: glitch-2 0.5s infinite;
+            color: var(--cyber-blue);
+            z-index: -2;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            height: calc(100vh - 200px);
+        }
+
+        .reality-panel, .code-panel {
+            background: rgba(0, 20, 0, 0.8);
+            border: 1px solid var(--matrix-green);
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .reality-panel::before, .code-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--matrix-green), transparent);
+            animation: scanline 2s linear infinite;
+        }
+
+        .dimension-view {
+            width: 100%;
+            height: 300px;
+            background: #001100;
+            border: 1px solid var(--matrix-green);
+            margin: 10px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .reality-object {
+            position: absolute;
+            background: var(--matrix-green);
+            border: 1px solid var(--cyber-blue);
+            transition: all 0.5s;
+            cursor: move;
+        }
+
+        .code-editor {
+            width: 100%;
+            height: 400px;
+            background: #001100;
+            color: var(--matrix-green);
+            border: 1px solid var(--matrix-green);
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            padding: 10px;
+            resize: none;
+            outline: none;
+        }
+
+        .toolbox {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .cyber-btn {
+            background: #002200;
+            color: var(--matrix-green);
+            border: 1px solid var(--matrix-green);
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cyber-btn:hover {
+            background: var(--matrix-green);
+            color: #000;
+            box-shadow: 0 0 20px var(--matrix-green);
+        }
+
+        .cyber-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 0, 0.4), transparent);
+            transition: 0.5s;
+        }
+
+        .cyber-btn:hover::before {
+            left: 100%;
+        }
+
+        .console-output {
+            background: #000;
+            color: var(--matrix-green);
+            padding: 15px;
+            border: 1px solid var(--matrix-green);
+            height: 150px;
+            overflow-y: auto;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+
+        .reality-controls {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .status-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 20, 0, 0.9);
+            border: 1px solid var(--matrix-green);
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+
+        .reality-level {
+            width: 100%;
+            height: 20px;
+            background: #002200;
+            border: 1px solid var(--matrix-green);
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .reality-fill {
+            height: 100%;
+            background: var(--matrix-green);
+            width: 0%;
+            transition: width 1s;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        @keyframes glitch-1 {
+            0% { transform: translate(0); opacity: 1; }
+            50% { transform: translate(-2px, -2px); opacity: 0.75; }
+            100% { transform: translate(0); opacity: 1; }
+        }
+
+        @keyframes glitch-2 {
+            0% { transform: translate(0); opacity: 1; }
+            50% { transform: translate(2px, 2px); opacity: 0.75; }
+            100% { transform: translate(0); opacity: 1; }
+        }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100vh); }
+        }
+
+        .object-id {
+            position: absolute;
+            bottom: -15px;
+            right: 0;
+            font-size: 10px;
+            color: var(--cyber-blue);
+        }
+
+        .creator-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 3px solid var(--matrix-green);
+            padding: 30px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+            max-width: 500px;
+        }
+
+        .hologram {
+            position: absolute;
+            border: 1px dashed var(--cyber-blue);
+            background: rgba(0, 255, 255, 0.1);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- 矩阵数字雨背景 -->
+    <canvas class="matrix-rain" id="matrixCanvas"></canvas>
+
+    <div class="header">
+        <div class="glitch-text" data-text="F.B. LEVEL 5: REALITY HACK">F.B. LEVEL 5: REALITY HACK</div>
+        <div style="margin-top: 10px; font-size: 1.2em;">你现在是创造者。改写现实。</div>
+    </div>
+
+    <div class="game-container">
+        <div class="reality-panel">
+            <h3>⟁ 现实维度 ⟁</h3>
+            <div class="dimension-view" id="realityView">
+                <!-- 动态生成的现实对象 -->
+                <div class="reality-object" id="obj1" style="left: 50px; top: 50px; width: 60px; height: 60px;">
+                    <div class="object-id">#obj1</div>
+                </div>
+                <div class="reality-object" id="obj2" style="left: 200px; top: 100px; width: 80px; height: 40px;">
+                    <div class="object-id">#obj2</div>
+                </div>
+                <div class="reality-object" id="obj3" style="left: 100px; top: 200px; width: 40px; height: 80px;">
+                    <div class="object-id">#obj3</div>
+                </div>
+            </div>
+
+            <div class="reality-controls">
+                <button class="cyber-btn" onclick="createObject()">创建对象</button>
+                <button class="cyber-btn" onclick="deleteSelected()">删除对象</button>
+                <button class="cyber-btn" onclick="resetReality()">重置现实</button>
+            </div>
+
+            <div class="reality-level">
+                <div class="reality-fill" id="realityFill"></div>
+            </div>
+            <div>现实控制等级: <span id="realityPercent">0%</span></div>
+        </div>
+
+        <div class="code-panel">
+            <h3>⟁ 源代码维度 ⟁</h3>
+            <textarea class="code-editor" id="codeEditor" spellcheck="false">
+// F.B. 创造者控制台
+// 你现在可以控制现实本身
+
+// 可用的现实操作函数:
+// createObject(x, y, width, height) - 创建新对象
+// modifyObject(id, properties) - 修改对象属性  
+// deleteObject(id) - 删除对象
+// changePhysics(property, value) - 改变物理规则
+// createRule(condition, action) - 创建新规则
+// warpReality(level) - 扭曲现实等级
+
+// 示例: 创建一个会移动的对象
+// createObject(300, 150, 50, 50);
+// setInterval(() => {
+//   modifyObject('newObj', {left: '+5'});
+// }, 100);
+
+// 大胆尝试！你是创造者！
+            </textarea>
+
+            <div class="toolbox">
+                <button class="cyber-btn" onclick="executeCode()">执行代码</button>
+                <button class="cyber-btn" onclick="saveReality()">保存现实</button>
+                <button class="cyber-btn" onclick="loadReality()">加载现实</button>
+                <button class="cyber-btn" onclick="addGravity()">添加重力</button>
+                <button class="cyber-btn" onclick="addCollision()">添加碰撞</button>
+                <button class="cyber-btn" onclick="breakReality()">打破现实</button>
+            </div>
+
+            <div class="console-output" id="creatorConsole">
+[系统] 欢迎，创造者。
+[系统] 现实控制接口已激活。
+[系统] 你可以通过代码或界面控制这个维度。
+&gt; 
+            </div>
+        </div>
+    </div>
+
+    <div class="status-panel">
+        <div>现实稳定性: <span id="stability">100%</span></div>
+        <div>对象数量: <span id="objectCount">3</span></div>
+        <div>物理规则: <span id="physicsRules">默认</span></div>
+        <div>创造者权限: <span style="color: var(--neon-pink)">MAXIMUM</span></div>
+    </div>
+
+    <div class="creator-message" id="welcomeMessage">
+        <h2>欢迎来到第五维度</h2>
+        <p>在前面的关卡中，你学会了寻找和利用漏洞。</p>
+        <p>现在，你将学习最大的漏洞：</p>
+        <p><strong>现实本身就是一个可编程的系统</strong></p>
+        <p>你是创造者。编写你想要的现实。</p>
+        <button class="cyber-btn" onclick="hideMessage('welcomeMessage')" style="margin-top: 20px;">开始创造</button>
+    </div>
+
+    <div class="creator-message" id="realityBrokenMessage">
+        <h2>现实破碎！</h2>
+        <p>你打破了物理规则！</p>
+        <p>对象正在以不可能的方式运动...</p>
+        <p>这才是真正的漏洞狩猎！</p>
+        <button class="cyber-btn" onclick="hideMessage('realityBrokenMessage'); stabilizeReality();">稳定现实</button>
+    </div>
+
+    <script>
+        // 现实引擎
+        const realityEngine = {
+            objects: new Map(),
+            physics: {
+                gravity: 0,
+                friction: 0.98,
+                collision: true,
+                realityLevel: 0
+            },
+            rules: [],
+            selectedObject: null,
+            realityStability: 100
+        };
+
+        // 初始化现实引擎
+        function initRealityEngine() {
+            createMatrixRain();
+            setupEventListeners();
+            updateRealityStats();
+            document.getElementById('welcomeMessage').style.display = 'block';
+
+            // 初始对象
+            realityEngine.objects.set('obj1', {
+                element: document.getElementById('obj1'),
+                x: 50, y: 50, width: 60, height: 60,
+                vx: 0, vy: 0
+            });
+
+            realityEngine.objects.set('obj2', {
+                element: document.getElementById('obj2'),
+                x: 200, y: 100, width: 80, height: 40,
+                vx: 0, vy: 0
+            });
+
+            realityEngine.objects.set('obj3', {
+                element: document.getElementById('obj3'),
+                x: 100, y: 200, width: 40, height: 80,
+                vx: 0, vy: 0
+            });
+
+            // 开始物理循环
+            setInterval(updatePhysics, 1000/60);
+        }
+
+        // 创建矩阵数字雨
+        function createMatrixRain() {
+            const canvas = document.getElementById('matrixCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const chars = "01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+            const fontSize = 14;
+            const columns = canvas.width / fontSize;
+            const drops = [];
+            
+            for(let i = 0; i < columns; i++) {
+                drops[i] = 1;
+            }
+            
+            function draw() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#0F0';
+                ctx.font = fontSize + 'px monospace';
+                
+                for(let i = 0; i < drops.length; i++) {
+                    const text = chars[Math.floor(Math.random() * chars.length)];
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    if(drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+            }
+            
+            setInterval(draw, 33);
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 对象选择
+            document.querySelectorAll('.reality-object').forEach(obj => {
+                obj.addEventListener('click', selectObject);
+            });
+
+            // 对象拖动
+            let isDragging = false;
+            document.getElementById('realityView').addEventListener('mousedown', () => isDragging = true);
+            document.addEventListener('mouseup', () => isDragging = false);
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging && realityEngine.selectedObject) {
+                    const rect = document.getElementById('realityView').getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    modifyObject(realityEngine.selectedObject.id, {
+                        left: x - realityEngine.selectedObject.width / 2,
+                        top: y - realityEngine.selectedObject.height / 2
+                    });
+                }
+            });
+        }
+
+        // 选择对象
+        function selectObject(event) {
+            document.querySelectorAll('.reality-object').forEach(obj => {
+                obj.style.borderColor = '#00ffff';
+            });
+            
+            event.currentTarget.style.borderColor = '#ff00ff';
+            realityEngine.selectedObject = realityEngine.objects.get(event.currentTarget.id);
+        }
+
+        // === 创造者命令 ===
+
+        function createObject(x = 100, y = 100, width = 50, height = 50) {
+            const id = 'obj' + (realityEngine.objects.size + 1);
+            const obj = document.createElement('div');
+            obj.className = 'reality-object';
+            obj.id = id;
+            obj.style.left = x + 'px';
+            obj.style.top = y + 'px';
+            obj.style.width = width + 'px';
+            obj.style.height = height + 'px';
+            
+            const idLabel = document.createElement('div');
+            idLabel.className = 'object-id';
+            idLabel.textContent = '#' + id;
+            obj.appendChild(idLabel);
+            
+            obj.addEventListener('click', selectObject);
+            document.getElementById('realityView').appendChild(obj);
+            
+            realityEngine.objects.set(id, {
+                element: obj,
+                x: x, y: y, width: width, height: height,
+                vx: 0, vy: 0
+            });
+            
+            logToConsole(`创建对象: ${id}`);
+            updateRealityStats();
+            return id;
+        }
+
+        function modifyObject(id, properties) {
+            const obj = realityEngine.objects.get(id);
+            if (!obj) {
+                logToConsole(`错误: 对象 ${id} 不存在`);
+                return;
+            }
+            
+            Object.keys(properties).forEach(prop => {
+                const value = properties[prop];
+                
+                if (prop === 'left') obj.x = typeof value === 'string' ? eval(`obj.x ${value}`) : value;
+                else if (prop === 'top') obj.y = typeof value === 'string' ? eval(`obj.y ${value}`) : value;
+                else if (prop === 'width') obj.width = value;
+                else if (prop === 'height') obj.height = value;
+                else if (prop === 'color') obj.element.style.background = value;
+                else if (prop === 'vx') obj.vx = value;
+                else if (prop === 'vy') obj.vy = value;
+                
+                if (['left', 'top', 'width', 'height', 'color'].includes(prop)) {
+                    obj.element.style[prop] = typeof value === 'number' ? value + 'px' : value;
+                }
+            });
+            
+            logToConsole(`修改对象: ${id}`);
+        }
+
+        function deleteObject(id) {
+            const obj = realityEngine.objects.get(id);
+            if (obj) {
+                obj.element.remove();
+                realityEngine.objects.delete(id);
+                logToConsole(`删除对象: ${id}`);
+                updateRealityStats();
+            }
+        }
+
+        function changePhysics(property, value) {
+            if (realityEngine.physics.hasOwnProperty(property)) {
+                realityEngine.physics[property] = value;
+                logToConsole(`物理规则改变: ${property} = ${value}`);
+                
+                if (property === 'gravity' && value !== 0) {
+                    realityEngine.realityStability -= 10;
+                    updateRealityStats();
+                }
+            }
+        }
+
+        function warpReality(level) {
+            realityEngine.physics.realityLevel = level;
+            document.body.style.filter = `hue-rotate(${level * 90}deg) blur(${level * 2}px)`;
+            logToConsole(`现实扭曲等级: ${level}`);
+            
+            realityEngine.realityStability = Math.max(0, 100 - level * 20);
+            updateRealityStats();
+            
+            if (level > 3) {
+                document.getElementById('realityBrokenMessage').style.display = 'block';
+            }
+        }
+
+        // 物理引擎更新
+        function updatePhysics() {
+            realityEngine.objects.forEach((obj, id) => {
+                // 应用重力
+                obj.vy += realityEngine.physics.gravity;
+                
+                // 应用速度
+                obj.x += obj.vx;
+                obj.y += obj.vy;
+                
+                // 应用摩擦
+                obj.vx *= realityEngine.physics.friction;
+                obj.vy *= realityEngine.physics.friction;
+                
+                // 边界检测
+                const container = document.getElementById('realityView');
+                if (obj.x < 0) { obj.x = 0; obj.vx *= -0.8; }
+                if (obj.y < 0) { obj.y = 0; obj.vy *= -0.8; }
+                if (obj.x + obj.width > container.clientWidth) { 
+                    obj.x = container.clientWidth - obj.width; 
+                    obj.vx *= -0.8; 
+                }
+                if (obj.y + obj.height > container.clientHeight) { 
+                    obj.y = container.clientHeight - obj.height; 
+                    obj.vy *= -0.8; 
+                }
+                
+                // 更新位置
+                obj.element.style.left = obj.x + 'px';
+                obj.element.style.top = obj.y + 'px';
+                
+                // 应用现实扭曲效果
+                if (realityEngine.physics.realityLevel > 0) {
+                    const drift = realityEngine.physics.realityLevel * 2;
+                    obj.element.style.transform = `rotate(${Math.sin(Date.now() * 0.001) * drift}deg)`;
+                }
+            });
+        }
+
+        // 工具函数
+        function executeCode() {
+            const code = document.getElementById('codeEditor').value;
+            try {
+                eval(code);
+                logToConsole('代码执行成功');
+            } catch (error) {
+                logToConsole(`执行错误: ${error.message}`);
+            }
+        }
+
+        function addGravity() {
+            changePhysics('gravity', 0.5);
+            logToConsole('重力系统已激活');
+        }
+
+        function addCollision() {
+            changePhysics('collision', true);
+            logToConsole('碰撞检测已启用');
+        }
+
+        function breakReality() {
+            warpReality(5);
+            changePhysics('gravity', 0.2);
+            changePhysics('friction', 0.9);
+            
+            // 让所有对象随机运动
+            realityEngine.objects.forEach((obj, id) => {
+                obj.vx = (Math.random() - 0.5) * 10;
+                obj.vy = (Math.random() - 0.5) * 10;
+            });
+            
+            logToConsole('现实结构正在崩溃...');
+        }
+
+        function stabilizeReality() {
+            warpReality(0);
+            changePhysics('gravity', 0);
+            changePhysics('friction', 0.98);
+            realityEngine.objects.forEach(obj => {
+                obj.vx = obj.vy = 0;
+                obj.element.style.transform = 'none';
+            });
+            logToConsole('现实稳定程序完成');
+        }
+
+        function deleteSelected() {
+            if (realityEngine.selectedObject) {
+                deleteObject(realityEngine.selectedObject.element.id);
+                realityEngine.selectedObject = null;
+            }
+        }
+
+        function resetReality() {
+            realityEngine.objects.forEach((obj, id) => {
+                if (!['obj1', 'obj2', 'obj3'].includes(id)) {
+                    deleteObject(id);
+                }
+            });
+            stabilizeReality();
+            logToConsole('现实重置完成');
+        }
+
+        function saveReality() {
+            const realityData = {
+                objects: Array.from(realityEngine.objects.entries()),
+                physics: realityEngine.physics
+            };
+            localStorage.setItem('fb_reality', JSON.stringify(realityData));
+            logToConsole('现实状态已保存');
+        }
+
+        function loadReality() {
+            const saved = localStorage.getItem('fb_reality');
+            if (saved) {
+                const realityData = JSON.parse(saved);
+                // 实现加载逻辑
+                logToConsole('现实状态已加载');
+            } else {
+                logToConsole('错误: 没有找到保存的现实');
+            }
+        }
+
+        function updateRealityStats() {
+            document.getElementById('objectCount').textContent = realityEngine.objects.size;
+            document.getElementById('stability').textContent = realityEngine.realityStability + '%';
+            
+            const controlLevel = Math.min(100, realityEngine.objects.size * 10 + (100 - realityEngine.realityStability));
+            document.getElementById('realityFill').style.width = controlLevel + '%';
+            document.getElementById('realityPercent').textContent = controlLevel + '%';
+        }
+
+        function logToConsole(message) {
+            const console = document.getElementById('creatorConsole');
+            console.innerHTML += `<br>${message}`;
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function hideMessage(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // 暴露函数到全局作用域
+        window.createObject = createObject;
+        window.modifyObject = modifyObject;
+        window.deleteObject = deleteObject;
+        window.changePhysics = changePhysics;
+        window.warpReality = warpReality;
+        window.executeCode = executeCode;
+
+        // 初始化
+        window.onload = initRealityEngine;
+
+        // 控制台欢迎信息
+        console.log('%c=== F.B. LEVEL 5: 现实黑客 ===', 'color: #00ff00; font-size: 20px; font-weight: bold;');
+        console.log('%c你现在拥有创造者的权限！', 'color: #ff00ff;');
+        console.log('使用这些命令控制现实:');
+        console.log('createObject(x, y, width, height)');
+        console.log('modifyObject(id, {left, top, width, height, color, vx, vy})');
+        console.log('deleteObject(id)');
+        console.log('changePhysics(property, value)');
+        console.log('warpReality(level)');
+    </script>
+</body>
+</html>

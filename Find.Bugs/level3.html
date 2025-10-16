@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F.B. - Level 3: JavaScript事件实验室</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: #ecf0f1;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #e74c3c;
+            border-radius: 10px;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        #event-lab {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background: #2c3e50;
+            border: 3px solid #e74c3c;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .lab-node {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: #3498db;
+            border: 2px solid #2980b9;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            user-select: none;
+        }
+
+        .lab-node:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #3498db;
+        }
+
+        .lab-node.active {
+            background: #2ecc71;
+            border-color: #27ae60;
+            box-shadow: 0 0 20px #2ecc71;
+        }
+
+        .lab-node.broken {
+            background: #e74c3c;
+            border-color: #c0392b;
+            cursor: not-allowed;
+        }
+
+        .connection {
+            position: absolute;
+            background: #7f8c8d;
+            height: 4px;
+            transform-origin: 0 0;
+            z-index: 1;
+        }
+
+        .connection.active {
+            background: #2ecc71;
+            box-shadow: 0 0 8px #2ecc71;
+        }
+
+        #data-flow {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #f1c40f;
+            border-radius: 50%;
+            z-index: 2;
+            display: none;
+        }
+
+        .control-panel {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border: 2px solid #e74c3c;
+            border-radius: 10px;
+        }
+
+        .code-editor {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+            height: 250px;
+            overflow-y: auto;
+            border: 1px solid #34495e;
+        }
+
+        .event-log {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            height: 150px;
+            overflow-y: auto;
+            margin: 10px 0;
+            border: 1px solid #34495e;
+        }
+
+        .hint {
+            background: rgba(231, 76, 60, 0.2);
+            padding: 10px;
+            border-left: 3px solid #e74c3c;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        button {
+            background: #e74c3c;
+            color: white;
+            border: 1px outset #c0392b;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 30px;
+            border: 3px solid #e74c3c;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+            max-width: 500px;
+        }
+
+        .debug-info {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            z-index: 100;
+            display: none;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes dataFlow {
+            0% { transform: translateX(0) translateY(0); }
+            100% { transform: translateX(var(--target-x)) translateY(var(--target-y)); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>F.B. - Level 3: JavaScript事件实验室</h1>
+        <p>修复损坏的事件处理系统！</p>
+    </div>
+
+    <div class="game-container">
+        <div id="event-lab">
+            <!-- 连接线 -->
+            <div class="connection" id="conn-1"></div>
+            <div class="connection" id="conn-2"></div>
+            <div class="connection" id="conn-3"></div>
+            <div class="connection" id="conn-4"></div>
+            
+            <!-- 数据流动画 -->
+            <div id="data-flow"></div>
+            
+            <!-- 实验室节点 -->
+            <div class="lab-node" id="node-1" style="left: 100px; top: 100px;" data-type="input">输入节点</div>
+            <div class="lab-node" id="node-2" style="left: 300px; top: 150px;" data-type="processor">处理器</div>
+            <div class="lab-node broken" id="node-3" style="left: 500px; top: 100px;" data-type="memory">内存单元</div>
+            <div class="lab-node" id="node-4" style="left: 300px; top: 300px;" data-type="output">输出节点</div>
+            <div class="lab-node broken" id="node-5" style="left: 500px; top: 350px;" data-type="logic">逻辑单元</div>
+            
+            <!-- 工具提示 -->
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+
+        <div class="control-panel">
+            <h3>事件控制台</h3>
+            
+            <div class="code-editor" id="js-code">
+// 可用的JavaScript命令：
+// - addEventListener(element, event, handler)
+// - removeEventListener(element, event)
+// - triggerEvent(element, event)
+// - fixNode(nodeId)
+// - connectNodes(node1, node2)
+// - startDataFlow()
+// - debugNode(nodeId)
+            </div>
+            
+            <div class="event-log" id="event-log">
+[系统] 事件实验室已启动
+[系统] 检测到2个损坏的节点
+            </div>
+            
+            <div class="hint">
+                <strong>任务：</strong> 
+                <br>1. 修复所有损坏的节点
+                <br>2. 建立正确的事件连接
+                <br>3. 启动数据流系统
+            </div>
+            
+            <button onclick="showHint()">显示详细提示</button>
+            <button onclick="resetLevel()">重置实验室</button>
+            <button id="start-flow" onclick="startDataFlow()" disabled>启动数据流</button>
+            
+            <div class="debug-info">
+                活动连接: <span id="active-connections">0</span>/4
+                <br>修复节点: <span id="fixed-nodes">0</span>/2
+                <br>系统状态: <span id="system-status">离线</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 消息弹窗 -->
+    <div id="welcome-message" class="message">
+        <h3>欢迎来到事件实验室！</h3>
+        <p>这个实验室的事件处理系统出现了严重故障。</p>
+        <p>使用JavaScript命令修复事件监听器，恢复系统功能！</p>
+        <button onclick="hideMessage('welcome-message')">开始修复</button>
+    </div>
+
+    <div id="node-fixed-message" class="message">
+        <h3>节点已修复！</h3>
+        <p id="fix-message"></p>
+        <button onclick="hideMessage('node-fixed-message')">继续</button>
+    </div>
+
+    <div id="success-message" class="message">
+        <h3>实验室恢复运作！</h3>
+        <p>你成功修复了JavaScript事件系统！</p>
+        <p>掌握的技能：</p>
+        <ul style="text-align: left;">
+            <li>事件监听器的添加和移除</li>
+            <li>自定义事件触发</li>
+            <li>DOM事件处理</li>
+            <li>异步编程概念</li>
+        </ul>
+        <button onclick="goToNextLevel()">进入最终关卡</button>
+    </div>
+
+    <script>
+        // 实验室状态
+        const labState = {
+            nodes: {
+                'node-1': { fixed: true, type: 'input', connected: [] },
+                'node-2': { fixed: true, type: 'processor', connected: [] },
+                'node-3': { fixed: false, type: 'memory', connected: [] },
+                'node-4': { fixed: true, type: 'output', connected: [] },
+                'node-5': { fixed: false, type: 'logic', connected: [] }
+            },
+            connections: {
+                'conn-1': { active: false, from: 'node-1', to: 'node-2' },
+                'conn-2': { active: false, from: 'node-2', to: 'node-3' },
+                'conn-3': { active: false, from: 'node-2', to: 'node-5' },
+                'conn-4': { active: false, from: 'node-5', to: 'node-4' }
+            },
+            dataFlowing: false,
+            completed: false
+        };
+
+        // 初始化实验室
+        function initLab() {
+            setupConnections();
+            setupEventListeners();
+            updateVisualState();
+            document.getElementById('welcome-message').style.display = 'block';
+            
+            // 控制台初始化信息
+            setTimeout(() => {
+                console.log('%c=== F.B. Level 3: JavaScript事件实验室 ===', 'color: #e74c3c; font-size: 16px; font-weight: bold;');
+                console.log('%c可用的JavaScript命令：', 'color: #3498db;');
+                console.log('addEventListener("node-1", "click", handleInput)');
+                console.log('removeEventListener("node-3", "click")');
+                console.log('triggerEvent("node-1", "click")');
+                console.log('fixNode("node-3")');
+                console.log('connectNodes("node-1", "node-2")');
+                console.log('startDataFlow()');
+                console.log('debugNode("node-3")');
+            }, 1000);
+        }
+
+        // 设置连接线
+        function setupConnections() {
+            for (const [connId, conn] of Object.entries(labState.connections)) {
+                const fromNode = document.getElementById(conn.from);
+                const toNode = document.getElementById(conn.to);
+                const connection = document.getElementById(connId);
+                
+                if (fromNode && toNode && connection) {
+                    const fromRect = fromNode.getBoundingClientRect();
+                    const toRect = toNode.getBoundingClientRect();
+                    const labRect = document.getElementById('event-lab').getBoundingClientRect();
+                    
+                    const fromX = fromRect.left - labRect.left + fromRect.width / 2;
+                    const fromY = fromRect.top - labRect.top + fromRect.height / 2;
+                    const toX = toRect.left - labRect.left + toRect.width / 2;
+                    const toY = toRect.top - labRect.top + toRect.height / 2;
+                    
+                    const length = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
+                    const angle = Math.atan2(toY - fromY, toX - fromX) * 180 / Math.PI;
+                    
+                    connection.style.width = length + 'px';
+                    connection.style.left = fromX + 'px';
+                    connection.style.top = fromY + 'px';
+                    connection.style.transform = `rotate(${angle}deg)`;
+                }
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 节点点击事件
+            document.querySelectorAll('.lab-node:not(.broken)').forEach(node => {
+                node.addEventListener('click', handleNodeClick);
+            });
+            
+            // 节点悬停提示
+            document.querySelectorAll('.lab-node').forEach(node => {
+                node.addEventListener('mouseenter', showNodeTooltip);
+                node.addEventListener('mouseleave', hideNodeTooltip);
+            });
+        }
+
+        // 节点点击处理
+        function handleNodeClick(event) {
+            const nodeId = event.currentTarget.id;
+            logEvent(`点击了节点: ${nodeId}`);
+            
+            if (labState.nodes[nodeId].fixed) {
+                event.currentTarget.classList.add('active');
+                setTimeout(() => {
+                    event.currentTarget.classList.remove('active');
+                }, 500);
+                
+                // 触发连接的事件传播
+                propagateEvent(nodeId);
+            }
+        }
+
+        // 事件传播
+        function propagateEvent(nodeId) {
+            const connections = Object.entries(labState.connections)
+                .filter(([_, conn]) => conn.from === nodeId && conn.active);
+            
+            connections.forEach(([connId, conn]) => {
+                animateDataFlow(conn.from, conn.to);
+                
+                // 延迟触发目标节点
+                setTimeout(() => {
+                    if (labState.nodes[conn.to].fixed) {
+                        const targetNode = document.getElementById(conn.to);
+                        targetNode.classList.add('active');
+                        setTimeout(() => {
+                            targetNode.classList.remove('active');
+                        }, 500);
+                        
+                        logEvent(`事件传播到: ${conn.to}`);
+                        
+                        // 继续传播
+                        setTimeout(() => propagateEvent(conn.to), 300);
+                    }
+                }, 800);
+            });
+        }
+
+        // 数据流动画
+        function animateDataFlow(fromId, toId) {
+            const fromNode = document.getElementById(fromId);
+            const toNode = document.getElementById(toId);
+            const dataFlow = document.getElementById('data-flow');
+            const labRect = document.getElementById('event-lab').getBoundingClientRect();
+            
+            const fromRect = fromNode.getBoundingClientRect();
+            const toRect = toNode.getBoundingClientRect();
+            
+            const startX = fromRect.left - labRect.left + fromRect.width / 2 - 5;
+            const startY = fromRect.top - labRect.top + fromRect.height / 2 - 5;
+            const endX = toRect.left - labRect.left + toRect.width / 2 - 5;
+            const endY = toRect.top - labRect.top + toRect.height / 2 - 5;
+            
+            dataFlow.style.left = startX + 'px';
+            dataFlow.style.top = startY + 'px';
+            dataFlow.style.display = 'block';
+            
+            dataFlow.style.setProperty('--target-x', (endX - startX) + 'px');
+            dataFlow.style.setProperty('--target-y', (endY - startY) + 'px');
+            
+            dataFlow.style.animation = 'dataFlow 0.8s forwards';
+            
+            setTimeout(() => {
+                dataFlow.style.display = 'none';
+                dataFlow.style.animation = '';
+            }, 800);
+        }
+
+        // 工具提示
+        function showNodeTooltip(event) {
+            const node = event.currentTarget;
+            const tooltip = document.getElementById('tooltip');
+            const nodeId = node.id;
+            const nodeInfo = labState.nodes[nodeId];
+            
+            let status = nodeInfo.fixed ? '运转正常' : '需要修复';
+            let description = '';
+            
+            switch(nodeInfo.type) {
+                case 'input': description = '数据输入节点'; break;
+                case 'processor': description = '数据处理单元'; break;
+                case 'memory': description = '数据存储单元'; break;
+                case 'output': description = '结果输出节点'; break;
+                case 'logic': description = '逻辑运算单元'; break;
+            }
+            
+            tooltip.innerHTML = `
+                <strong>${node.textContent}</strong><br>
+                ID: ${nodeId}<br>
+                类型: ${description}<br>
+                状态: ${status}<br>
+                连接数: ${nodeInfo.connected.length}
+            `;
+            
+            tooltip.style.left = (event.pageX + 10) + 'px';
+            tooltip.style.top = (event.pageY + 10) + 'px';
+            tooltip.style.display = 'block';
+        }
+
+        function hideNodeTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+
+        // === JavaScript命令函数 ===
+        
+        function addEventListener(elementId, eventType, handlerName) {
+            const element = document.getElementById(elementId);
+            if (!element) {
+                logEvent(`错误: 找不到元素 ${elementId}`);
+                return;
+            }
+            
+            if (!labState.nodes[elementId].fixed) {
+                logEvent(`错误: 节点 ${elementId} 需要先修复`);
+                return;
+            }
+            
+            const handler = window[handlerName];
+            if (typeof handler !== 'function') {
+                logEvent(`错误: 找不到处理函数 ${handlerName}`);
+                return;
+            }
+            
+            element.addEventListener(eventType, handler);
+            logEvent(`已添加事件监听: ${elementId}.${eventType} -> ${handlerName}`);
+        }
+        
+        function removeEventListener(elementId, eventType) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                // 在实际应用中这里需要更复杂的事件移除逻辑
+                logEvent(`已移除事件监听: ${elementId}.${eventType}`);
+            }
+        }
+        
+        function triggerEvent(elementId, eventType) {
+            const element = document.getElementById(elementId);
+            if (element && labState.nodes[elementId].fixed) {
+                const event = new Event(eventType);
+                element.dispatchEvent(event);
+                logEvent(`已触发事件: ${elementId}.${eventType}`);
+            } else {
+                logEvent(`错误: 无法触发事件，节点可能损坏`);
+            }
+        }
+        
+        function fixNode(nodeId) {
+            if (labState.nodes[nodeId]) {
+                labState.nodes[nodeId].fixed = true;
+                const node = document.getElementById(nodeId);
+                node.classList.remove('broken');
+                node.addEventListener('click', handleNodeClick);
+                
+                logEvent(`节点已修复: ${nodeId}`);
+                updateVisualState();
+                
+                // 显示修复消息
+                document.getElementById('fix-message').textContent = 
+                    `${nodeId} (${labState.nodes[nodeId].type}) 已恢复功能`;
+                document.getElementById('node-fixed-message').style.display = 'block';
+                
+                checkCompletion();
+            }
+        }
+        
+        function connectNodes(node1, node2) {
+            const connection = Object.entries(labState.connections)
+                .find(([_, conn]) => 
+                    (conn.from === node1 && conn.to === node2) || 
+                    (conn.from === node2 && conn.to === node1));
+            
+            if (connection) {
+                const [connId, conn] = connection;
+                if (labState.nodes[node1].fixed && labState.nodes[node2].fixed) {
+                    conn.active = true;
+                    document.getElementById(connId).classList.add('active');
+                    
+                    labState.nodes[node1].connected.push(node2);
+                    labState.nodes[node2].connected.push(node1);
+                    
+                    logEvent(`已建立连接: ${node1} <-> ${node2}`);
+                    updateVisualState();
+                    checkCompletion();
+                } else {
+                    logEvent(`错误: 节点需要先修复才能连接`);
+                }
+            }
+        }
+        
+        function startDataFlow() {
+            if (labState.completed) {
+                labState.dataFlowing = true;
+                logEvent('数据流系统启动...');
+                
+                // 开始数据流动画循环
+                setTimeout(() => triggerEvent('node-1', 'click'), 1000);
+                setTimeout(() => triggerEvent('node-1', 'click'), 3000);
+                setTimeout(() => triggerEvent('node-1', 'click'), 5000);
+                
+                document.getElementById('system-status').textContent = '在线';
+                document.getElementById('system-status').style.color = '#2ecc71';
+                
+                setTimeout(() => {
+                    document.getElementById('success-message').style.display = 'block';
+                }, 6000);
+            } else {
+                logEvent('错误: 系统未完全修复，无法启动数据流');
+            }
+        }
+        
+        function debugNode(nodeId) {
+            if (labState.nodes[nodeId]) {
+                const node = labState.nodes[nodeId];
+                logEvent(`调试信息 - ${nodeId}:`);
+                logEvent(`  类型: ${node.type}`);
+                logEvent(`  状态: ${node.fixed ? '正常' : '损坏'}`);
+                logEvent(`  连接: ${node.connected.join(', ') || '无'}`);
+            }
+        }
+
+        // 工具函数
+        function handleInput(event) {
+            logEvent('输入节点接收到数据');
+        }
+
+        function updateVisualState() {
+            // 更新连接数
+            const activeConnections = Object.values(labState.connections)
+                .filter(conn => conn.active).length;
+            document.getElementById('active-connections').textContent = activeConnections;
+            
+            // 更新修复节点数
+            const fixedNodes = Object.values(labState.nodes)
+                .filter(node => node.fixed).length;
+            document.getElementById('fixed-nodes').textContent = fixedNodes;
+            
+            // 更新启动按钮状态
+            document.getElementById('start-flow').disabled = !labState.completed;
+        }
+
+        function checkCompletion() {
+            const allNodesFixed = Object.values(labState.nodes).every(node => node.fixed);
+            const allConnectionsActive = Object.values(labState.connections).every(conn => conn.active);
+            
+            labState.completed = allNodesFixed && allConnectionsActive;
+            
+            if (labState.completed) {
+                logEvent('*** 系统完全修复！可以启动数据流 ***');
+            }
+        }
+
+        function logEvent(message) {
+            const log = document.getElementById('event-log');
+            log.innerHTML += `[${new Date().toLocaleTimeString()}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+            console.log(`%c[事件] ${message}`, 'color: #3498db;');
+        }
+
+        function hideMessage(messageId) {
+            document.getElementById(messageId).style.display = 'none';
+        }
+        
+        function showHint() {
+            alert('详细提示：\n\n1. 首先修复损坏的节点：\n   fixNode("node-3")\n   fixNode("node-5")\n\n2. 建立所有连接：\n   connectNodes("node-1", "node-2")\n   connectNodes("node-2", "node-3")\n   connectNodes("node-2", "node-5")\n   connectNodes("node-5", "node-4")\n\n3. 启动数据流：\n   startDataFlow()');
+        }
+        
+        function resetLevel() {
+            // 重置所有状态
+            Object.keys(labState.nodes).forEach(nodeId => {
+                if (nodeId === 'node-3' || nodeId === 'node-5') {
+                    labState.nodes[nodeId].fixed = false;
+                    const node = document.getElementById(nodeId);
+                    node.classList.add('broken');
+                    node.removeEventListener('click', handleNodeClick);
+                }
+            });
+            
+            Object.keys(labState.connections).forEach(connId => {
+                labState.connections[connId].active = false;
+                document.getElementById(connId).classList.remove('active');
+            });
+            
+            Object.keys(labState.nodes).forEach(nodeId => {
+                labState.nodes[nodeId].connected = [];
+            });
+            
+            labState.dataFlowing = false;
+            labState.completed = false;
+            
+            document.getElementById('event-log').innerHTML = '[系统] 实验室已重置\n[系统] 检测到2个损坏的节点';
+            document.getElementById('system-status').textContent = '离线';
+            document.getElementById('system-status').style.color = '#e74c3c';
+            
+            updateVisualState();
+            console.clear();
+            console.log('%c[系统] Level 3 已重置', 'color: orange;');
+        }
+        
+        function goToNextLevel() {
+            alert("恭喜！你已经完成了所有训练关卡！\n\n在最终关卡中，你将面对真实的漏洞狩猎挑战。");
+        }
+
+        // 初始化实验室
+        window.onload = initLab;
+
+        // 暴露函数到全局作用域
+        window.addEventListener = addEventListener;
+        window.removeEventListener = removeEventListener;
+        window.triggerEvent = triggerEvent;
+        window.fixNode = fixNode;
+        window.connectNodes = connectNodes;
+        window.startDataFlow = startDataFlow;
+        window.debugNode = debugNode;
+        window.handleInput = handleInput;
+    </script>
+</body>
+</html>

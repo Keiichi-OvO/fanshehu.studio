@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F.B. - Level 4: 终极漏洞狩猎</title>
+    <style>
+        :root {
+            --primary: #9b59b6;
+            --secondary: #8e44ad;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --info: #3498db;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #ecf0f1;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid var(--primary);
+            border-radius: 15px;
+            position: relative;
+        }
+
+        .security-level {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--danger);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        #target-system {
+            position: relative;
+            width: 100%;
+            height: 700px;
+            background: #2c3e50;
+            border: 3px solid var(--primary);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .system-module {
+            position: absolute;
+            background: #34495e;
+            border: 2px solid #7f8c8d;
+            border-radius: 8px;
+            padding: 15px;
+            min-width: 200px;
+            transition: all 0.3s;
+        }
+
+        .system-module.vulnerable {
+            border-color: var(--danger);
+            box-shadow: 0 0 15px var(--danger);
+            animation: glow-red 2s infinite;
+        }
+
+        .system-module.secured {
+            border-color: var(--success);
+            box-shadow: 0 0 15px var(--success);
+        }
+
+        .system-module.suspicious {
+            border-color: var(--warning);
+            box-shadow: 0 0 15px var(--warning);
+        }
+
+        .module-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #7f8c8d;
+        }
+
+        .module-content {
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .connection-line {
+            position: absolute;
+            background: #7f8c8d;
+            height: 2px;
+            transform-origin: 0 0;
+            z-index: 1;
+        }
+
+        .connection-line.active {
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        .connection-line.compromised {
+            background: var(--danger);
+            box-shadow: 0 0 8px var(--danger);
+            animation: pulse 1s infinite;
+        }
+
+        .control-panel {
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border: 3px solid var(--primary);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mission-brief {
+            background: rgba(52, 73, 94, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--info);
+        }
+
+        .tool-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .tool-btn {
+            background: #34495e;
+            border: 1px solid #7f8c8d;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .tool-btn:hover {
+            background: var(--info);
+            transform: translateY(-2px);
+        }
+
+        .tool-btn.active {
+            background: var(--primary);
+            border-color: var(--secondary);
+        }
+
+        .code-terminal {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            flex: 1;
+            overflow-y: auto;
+            margin: 10px 0;
+            border: 1px solid #34495e;
+        }
+
+        .progress-tracker {
+            background: rgba(52, 73, 94, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .progress-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .progress-status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            background: #7f8c8d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .progress-status.completed {
+            background: var(--success);
+        }
+
+        .progress-status.failed {
+            background: var(--danger);
+        }
+
+        .alert-banner {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--danger);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            z-index: 1000;
+            display: none;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes glow-red {
+            0%, 100% { box-shadow: 0 0 15px var(--danger); }
+            50% { box-shadow: 0 0 25px var(--danger); }
+        }
+
+        @keyframes slideDown {
+            from { top: -100px; }
+            to { top: 20px; }
+        }
+
+        .hacker-terminal {
+            background: #000;
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin: 5px 0;
+            border: 1px solid #00ff00;
+        }
+
+        .scan-animation {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--info), transparent);
+            animation: scan 3s linear infinite;
+            display: none;
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        .firewall {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(231, 76, 60, 0.1),
+                rgba(231, 76, 60, 0.1) 10px,
+                rgba(192, 57, 43, 0.1) 10px,
+                rgba(192, 57, 43, 0.1) 20px
+            );
+            pointer-events: none;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="alert-banner" id="security-alert">
+        ⚠️ 安全警报：检测到入侵尝试！
+    </div>
+
+    <div class="header">
+        <h1>F.B. - Level 4: 终极漏洞狩猎</h1>
+        <p>渗透测试任务：安全银行系统</p>
+        <div class="security-level">安全级别: MAXIMUM</div>
+    </div>
+
+    <div class="game-container">
+        <div id="target-system">
+            <!-- 扫描动画 -->
+            <div class="scan-animation" id="system-scan"></div>
+            
+            <!-- 防火墙效果 -->
+            <div class="firewall" id="firewall"></div>
+            
+            <!-- 系统模块 -->
+            <div class="system-module vulnerable" id="login-module" style="left: 50px; top: 50px;">
+                <div class="module-header">用户登录系统</div>
+                <div class="module-content">
+                    状态: <span style="color: var(--danger)">VULNERABLE</span><br>
+                    漏洞: SQL注入、弱密码策略<br>
+                    风险等级: 高
+                </div>
+            </div>
+
+            <div class="system-module suspicious" id="payment-module" style="right: 50px; top: 100px;">
+                <div class="module-header">支付处理系统</div>
+                <div class="module-content">
+                    状态: <span style="color: var(--warning)">SUSPICIOUS</span><br>
+                    可疑活动检测<br>
+                    需要深入调查
+                </div>
+            </div>
+
+            <div class="system-module" id="database-module" style="left: 100px; top: 300px;">
+                <div class="module-header">客户数据库</div>
+                <div class="module-content">
+                    状态: <span style="color: var(--success)">SECURED</span><br>
+                    加密: AES-256<br>
+                    访问: 受限制
+                </div>
+            </div>
+
+            <div class="system-module vulnerable" id="api-module" style="right: 150px; top: 400px;">
+                <div class="module-header">REST API 网关</div>
+                <div class="module-content">
+                    状态: <span style="color: var(--danger)">VULNERABLE</span><br>
+                    漏洞: 输入验证缺失<br>
+                    风险等级: 严重
+                </div>
+            </div>
+
+            <div class="system-module" id="admin-module" style="left: 300px; top: 500px;">
+                <div class="module-header">管理员控制台</div>
+                <div class="module-content">
+                    状态: <span style="color: var(--warning)">HIDDEN</span><br>
+                    端口: 非标准<br>
+                    需要特殊访问权限
+                </div>
+            </div>
+
+            <!-- 连接线 -->
+            <div class="connection-line" id="conn-1"></div>
+            <div class="connection-line" id="conn-2"></div>
+            <div class="connection-line" id="conn-3"></div>
+            <div class="connection-line compromised" id="conn-4"></div>
+        </div>
+
+        <div class="control-panel">
+            <div class="mission-brief">
+                <h3>任务简报</h3>
+                <p><strong>目标:</strong> 安全银行系统 (securebank.com)</p>
+                <p><strong>任务:</strong> 识别并利用所有安全漏洞</p>
+                <p><strong>限制:</strong> 避免触发入侵检测系统(IDS)</p>
+                <p><strong>时间:</strong> 无限制</p>
+            </div>
+
+            <div class="tool-selector">
+                <button class="tool-btn" onclick="selectTool('scanner')">漏洞扫描器</button>
+                <button class="tool-btn" onclick="selectTool('exploit')">漏洞利用工具</button>
+                <button class="tool-btn" onclick="selectTool('analyzer')">流量分析器</button>
+                <button class="tool-btn" onclick="selectTool('stealth')">隐身模式</button>
+            </div>
+
+            <div class="code-terminal" id="hacker-terminal">
+[F.B. Agent] 系统连接已建立
+[F.B. Agent] 加载渗透测试工具包...
+[F.B. Agent] 目标: securebank.com
+[F.B. Agent] 开始 reconnaissance 阶段
+&gt; 
+            </div>
+
+            <div class="progress-tracker">
+                <h4>任务进度</h4>
+                <div class="progress-item">
+                    <div class="progress-status">1</div>
+                    <span>识别系统入口点</span>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-status">2</div>
+                    <span>绕过身份验证</span>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-status">3</div>
+                    <span>提升访问权限</span>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-status">4</div>
+                    <span>访问敏感数据</span>
+                </div>
+                <div class="progress-item">
+                    <div class="progress-status">5</div>
+                    <span>覆盖踪迹</span>
+                </div>
+            </div>
+
+            <button id="final-btn" onclick="completeMission()" style="display: none; background: var(--success);">
+                完成渗透测试
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 任务状态
+        const missionState = {
+            phase: 1,
+            tools: {
+                scanner: false,
+                exploit: false,
+                analyzer: false,
+                stealth: false
+            },
+            vulnerabilities: {
+                login: false,
+                payment: false,
+                api: false,
+                admin: false
+            },
+            detected: false,
+            completed: false
+        };
+
+        // 初始化任务
+        function initMission() {
+            setupConnections();
+            setupEventListeners();
+            logToTerminal("F.B. 终极漏洞狩猎任务开始");
+            logToTerminal("使用你的所有技能来渗透这个系统");
+            logToTerminal("输入 'help' 查看可用命令");
+
+            // 设置连接线
+            setTimeout(() => {
+                document.getElementById('conn-1').classList.add('active');
+                document.getElementById('conn-2').classList.add('active');
+                document.getElementById('conn-3').classList.add('active');
+            }, 1000);
+        }
+
+        // 设置连接线
+        function setupConnections() {
+            const connections = [
+                { id: 'conn-1', from: 'login-module', to: 'database-module' },
+                { id: 'conn-2', from: 'payment-module', to: 'database-module' },
+                { id: 'conn-3', from: 'api-module', to: 'payment-module' },
+                { id: 'conn-4', from: 'login-module', to: 'admin-module' }
+            ];
+
+            connections.forEach(conn => {
+                const fromEl = document.getElementById(conn.from);
+                const toEl = document.getElementById(conn.to);
+                const lineEl = document.getElementById(conn.id);
+
+                if (fromEl && toEl && lineEl) {
+                    const fromRect = fromEl.getBoundingClientRect();
+                    const toRect = toEl.getBoundingClientRect();
+                    const systemRect = document.getElementById('target-system').getBoundingClientRect();
+
+                    const fromX = fromRect.left - systemRect.left + fromRect.width / 2;
+                    const fromY = fromRect.top - systemRect.top + fromRect.height / 2;
+                    const toX = toRect.left - systemRect.left + toRect.width / 2;
+                    const toY = toRect.top - systemRect.top + toRect.height / 2;
+
+                    const length = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2));
+                    const angle = Math.atan2(toY - fromY, toX - fromX) * 180 / Math.PI;
+
+                    lineEl.style.width = length + 'px';
+                    lineEl.style.left = fromX + 'px';
+                    lineEl.style.top = fromY + 'px';
+                    lineEl.style.transform = `rotate(${angle}deg)`;
+                }
+            });
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 终端输入处理
+            document.getElementById('hacker-terminal').addEventListener('click', focusTerminal);
+            document.addEventListener('keydown', handleTerminalInput);
+        }
+
+        // 选择工具
+        function selectTool(tool) {
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            missionState.tools[tool] = true;
+            
+            switch(tool) {
+                case 'scanner':
+                    startVulnerabilityScan();
+                    break;
+                case 'exploit':
+                    logToTerminal("加载漏洞利用框架...");
+                    break;
+                case 'analyzer':
+                    logToTerminal("网络流量分析器已激活");
+                    break;
+                case 'stealth':
+                    activateStealthMode();
+                    break;
+            }
+        }
+
+        // 漏洞扫描
+        function startVulnerabilityScan() {
+            logToTerminal("启动全面漏洞扫描...");
+            document.getElementById('system-scan').style.display = 'block';
+            
+            setTimeout(() => {
+                document.getElementById('system-scan').style.display = 'none';
+                logToTerminal("扫描完成！发现以下漏洞：");
+                logToTerminal("- 登录系统: SQL注入漏洞");
+                logToTerminal("- API网关: 输入验证缺失");
+                logToTerminal("- 支付系统: 可疑活动模式");
+                logToTerminal("使用 'exploit' 工具进行利用");
+            }, 3000);
+        }
+
+        // 隐身模式
+        function activateStealthMode() {
+            logToTerminal("激活隐身协议...");
+            document.getElementById('firewall').style.display = 'block';
+            
+            setTimeout(() => {
+                logToTerminal("隐身模式激活成功");
+                logToTerminal("IDS检测概率降低 80%");
+            }, 2000);
+        }
+
+        // 终端输入处理
+        function handleTerminalInput(event) {
+            const terminal = document.getElementById('hacker-terminal');
+            if (event.key === 'Enter') {
+                const input = terminal.textContent.split('>').pop().trim();
+                processCommand(input);
+                terminal.innerHTML += '<br>> ';
+                event.preventDefault();
+            }
+        }
+
+        // 处理命令
+        function processCommand(command) {
+            switch(command.toLowerCase()) {
+                case 'help':
+                    showHelp();
+                    break;
+                case 'scan':
+                    startVulnerabilityScan();
+                    break;
+                case 'exploit login':
+                    exploitLogin();
+                    break;
+                case 'exploit api':
+                    exploitAPI();
+                    break;
+                case 'bypass ids':
+                    activateStealthMode();
+                    break;
+                case 'access admin':
+                    accessAdmin();
+                    break;
+                case 'extract data':
+                    extractData();
+                    break;
+                case 'status':
+                    showStatus();
+                    break;
+                default:
+                    logToTerminal(`未知命令: ${command}`);
+                    logToTerminal("输入 'help' 查看可用命令");
+            }
+        }
+
+        // 显示帮助
+        function showHelp() {
+            logToTerminal("可用命令:");
+            logToTerminal("scan - 扫描系统漏洞");
+            logToTerminal("exploit [target] - 利用特定目标");
+            logToTerminal("bypass ids - 绕过入侵检测");
+            logToTerminal("access admin - 获取管理员权限");
+            logToTerminal("extract data - 提取敏感数据");
+            logToTerminal("status - 显示任务状态");
+        }
+
+        // 利用登录系统
+        function exploitLogin() {
+            if (!missionState.tools.exploit) {
+                logToTerminal("错误: 需要先激活漏洞利用工具");
+                return;
+            }
+
+            logToTerminal("尝试SQL注入攻击...");
+            setTimeout(() => {
+                logToTerminal("绕过身份验证成功！");
+                document.getElementById('login-module').classList.remove('vulnerable');
+                document.getElementById('login-module').classList.add('secured');
+                missionState.vulnerabilities.login = true;
+                updateProgress(1);
+                checkSecurityAlert();
+            }, 2000);
+        }
+
+        // 利用API漏洞
+        function exploitAPI() {
+            logToTerminal("利用API输入验证漏洞...");
+            setTimeout(() => {
+                logToTerminal("API访问权限获取成功");
+                document.getElementById('api-module').classList.remove('vulnerable');
+                document.getElementById('api-module').classList.add('secured');
+                missionState.vulnerabilities.api = true;
+                updateProgress(2);
+                checkSecurityAlert();
+            }, 1500);
+        }
+
+        // 访问管理员控制台
+        function accessAdmin() {
+            if (!missionState.vulnerabilities.login) {
+                logToTerminal("错误: 需要先获取登录权限");
+                return;
+            }
+
+            logToTerminal("尝试访问隐藏的管理员控制台...");
+            setTimeout(() => {
+                logToTerminal("权限提升成功！");
+                document.getElementById('admin-module').classList.remove('suspicious');
+                document.getElementById('admin-module').classList.add('secured');
+                missionState.vulnerabilities.admin = true;
+                updateProgress(3);
+                triggerSecurityAlert();
+            }, 2500);
+        }
+
+        // 提取数据
+        function extractData() {
+            if (!missionState.vulnerabilities.admin) {
+                logToTerminal("错误: 需要管理员权限");
+                return;
+            }
+
+            logToTerminal("开始提取敏感数据...");
+            setTimeout(() => {
+                logToTerminal("数据提取完成！");
+                logToTerminal("获得: 客户数据库备份");
+                logToTerminal("获得: 财务交易记录");
+                logToTerminal("获得: 系统配置文件");
+                missionState.vulnerabilities.payment = true;
+                updateProgress(4);
+                updateProgress(5);
+                completeMission();
+            }, 3000);
+        }
+
+        // 显示状态
+        function showStatus() {
+            logToTerminal("任务状态:");
+            logToTerminal(`阶段: ${missionState.phase}/5`);
+            logToTerminal(`检测状态: ${missionState.detected ? '已暴露' : '隐蔽'}`);
+            const vulnCount = Object.values(missionState.vulnerabilities).filter(v => v).length;
+            logToTerminal(`已利用漏洞: ${vulnCount}/4`);
+        }
+
+        // 更新进度
+        function updateProgress(phase) {
+            const items = document.querySelectorAll('.progress-item');
+            if (phase <= items.length) {
+                items[phase - 1].querySelector('.progress-status').classList.add('completed');
+                missionState.phase = phase + 1;
+            }
+        }
+
+        // 检查安全警报
+        function checkSecurityAlert() {
+            if (!missionState.tools.stealth && Math.random() > 0.7) {
+                triggerSecurityAlert();
+            }
+        }
+
+        // 触发安全警报
+        function triggerSecurityAlert() {
+            missionState.detected = true;
+            document.getElementById('security-alert').style.display = 'block';
+            logToTerminal("警告: 触发入侵检测系统！");
+            logToTerminal("建议: 激活隐身模式或加速行动");
+            
+            setTimeout(() => {
+                document.getElementById('security-alert').style.display = 'none';
+            }, 5000);
+        }
+
+        // 完成任务
+        function completeMission() {
+            missionState.completed = true;
+            logToTerminal("*** 任务完成！ ***");
+            logToTerminal("所有系统漏洞已成功识别和利用");
+            logToTerminal("渗透测试报告已生成");
+            logToTerminal("恭喜你，F.B. 特工！");
+            
+            document.getElementById('final-btn').style.display = 'block';
+            
+            // 庆祝效果
+            document.querySelectorAll('.system-module').forEach(module => {
+                module.style.animation = 'pulse 1s infinite';
+            });
+        }
+
+        // 工具函数
+        function logToTerminal(message) {
+            const terminal = document.getElementById('hacker-terminal');
+            terminal.innerHTML += `<br>${message}`;
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function focusTerminal() {
+            // 简化实现 - 在实际应用中需要更复杂的终端实现
+        }
+
+        // 暴露全局函数
+        window.exploitLogin = exploitLogin;
+        window.exploitAPI = exploitAPI;
+        window.accessAdmin = accessAdmin;
+        window.extractData = extractData;
+
+        // 初始化任务
+        window.onload = initMission;
+
+        // 添加控制台命令
+        console.log('%c=== F.B. 终极漏洞狩猎 - Level 4 ===', 'color: #9b59b6; font-size: 18px; font-weight: bold;');
+        console.log('%c可用的渗透测试命令:', 'color: #3498db;');
+        console.log('exploitLogin() - 利用登录系统漏洞');
+        console.log('exploitAPI() - 利用API网关漏洞');
+        console.log('accessAdmin() - 获取管理员权限');
+        console.log('extractData() - 提取敏感数据');
+    </script>
+</body>
+</html>

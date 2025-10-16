@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F.B. - Level 1: 控制台对话</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #1a1a2e, #16213e);
+            color: #e6e6e6;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 500px;
+            margin: 20px auto;
+            border: 3px solid #8B4513;
+            box-shadow: 0 0 20px rgba(139, 69, 19, 0.5);
+            background: #0f3460;
+            overflow: hidden;
+        }
+
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border: 1px solid #8B4513;
+            border-radius: 5px;
+        }
+
+        #objective {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        #controls {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .platform {
+            position: absolute;
+            background: #8B4513;
+            border: 2px outset #CD853F;
+        }
+
+        #player {
+            position: absolute;
+            width: 30px;
+            height: 50px;
+            background: #4ecca3;
+            border-radius: 5px 5px 0 0;
+            z-index: 10;
+            transition: left 0.1s, bottom 0.1s;
+        }
+
+        #invisible-wall {
+            position: absolute;
+            left: 400px;
+            top: 0;
+            width: 20px;
+            height: 500px;
+            background: transparent;
+            z-index: 5;
+        }
+
+        #broken-jump-pad {
+            position: absolute;
+            left: 650px;
+            bottom: 100px;
+            width: 60px;
+            height: 10px;
+            background: #ff6b6b;
+            border: 1px dashed #ff0000;
+            z-index: 5;
+        }
+
+        #exit-door {
+            position: absolute;
+            right: 50px;
+            bottom: 150px;
+            width: 40px;
+            height: 80px;
+            background: #4ecca3;
+            border: 2px solid #2e8b57;
+            z-index: 5;
+            display: none;
+        }
+
+        #console-hint {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border: 1px solid #8B4513;
+            border-radius: 5px;
+            font-size: 12px;
+            max-width: 300px;
+            display: none;
+        }
+
+        #debug-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border: 1px solid #8B4513;
+            border-radius: 5px;
+            font-size: 12px;
+            display: none;
+        }
+
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border: 2px solid #8B4513;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        #leo-message {
+            color: #4ecca3;
+        }
+
+        #success-message {
+            color: #4ecca3;
+        }
+
+        button {
+            background: #8B4513;
+            color: white;
+            border: 1px outset #CD853F;
+            padding: 8px 15px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+
+        button:hover {
+            background: #A0522D;
+        }
+
+        #next-level-btn {
+            display: none;
+            margin: 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center; color: #8B4513; margin: 10px 0;">F.B. - Level 1: 控制台对话</h1>
+    
+    <div id="game-container">
+        <div id="hud">
+            <div id="objective">目标: 到达右侧的出口</div>
+            <div id="controls">控制: ← → 移动, 空格键跳跃</div>
+        </div>
+        
+        <!-- 游戏元素 -->
+        <div class="platform" style="left: 0; bottom: 0; width: 800px; height: 20px;"></div>
+        <div class="platform" style="left: 100px; bottom: 100px; width: 150px; height: 20px;"></div>
+        <div class="platform" style="left: 300px; bottom: 180px; width: 120px; height: 20px;"></div>
+        <div class="platform" style="left: 500px; bottom: 100px; width: 100px; height: 20px;"></div>
+        <div class="platform" style="left: 700px; bottom: 200px; width: 80px; height: 20px;"></div>
+        
+        <div id="player"></div>
+        <div id="invisible-wall"></div>
+        <div id="broken-jump-pad"></div>
+        <div id="exit-door"></div>
+        
+        <div id="console-hint">
+            <strong>提示:</strong> 按F12打开开发者工具，查看控制台信息
+        </div>
+        
+        <div id="debug-info">
+            玩家坐标: (<span id="player-x">0</span>, <span id="player-y">0</span>)<br>
+            跳跃力量: <span id="jump-power">5</span>
+        </div>
+        
+        <div id="leo-message" class="message">
+            <h3>Leo 发来消息</h3>
+            <p>看来你找到了控制台！这个无形的墙是个bug，我没时间修复它。</p>
+            <p>试试在控制台输入: <code>removeWall()</code></p>
+            <button onclick="hideMessage('leo-message')">确定</button>
+        </div>
+        
+        <div id="jump-message" class="message">
+            <h3>跳跃装置损坏</h3>
+            <p>这个跳跃板的动力不足，无法到达下一个平台。</p>
+            <p>在控制台输入: <code>boostJumpPower()</code> 来增强跳跃力量</p>
+            <button onclick="hideMessage('jump-message')">确定</button>
+        </div>
+        
+        <div id="success-message" class="message">
+            <h3>恭喜！</h3>
+            <p>你成功修复了Level 1的漏洞！</p>
+            <p>你已经掌握了F.B.特工的基本技能：</p>
+            <ul style="text-align: left;">
+                <li>与控制台交互</li>
+                <li>识别和修复DOM元素问题</li>
+                <li>修改游戏变量</li>
+            </ul>
+            <button id="next-level-btn" onclick="goToNextLevel()">进入 Level 2</button>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin: 20px;">
+        <button onclick="showDebugInfo()">显示调试信息</button>
+        <button onclick="resetLevel()">重置关卡</button>
+    </div>
+
+    <script>
+        // 游戏状态
+        const gameState = {
+            player: {
+                x: 50,
+                y: 20,
+                width: 30,
+                height: 50,
+                velocityX: 0,
+                velocityY: 0,
+                isJumping: false,
+                jumpPower: 5
+            },
+            gravity: 0.5,
+            isWallRemoved: false,
+            isJumpBoosted: false,
+            levelCompleted: false
+        };
+
+        // DOM元素
+        const playerEl = document.getElementById('player');
+        const invisibleWall = document.getElementById('invisible-wall');
+        const exitDoor = document.getElementById('exit-door');
+        const debugInfo = document.getElementById('debug-info');
+        const consoleHint = document.getElementById('console-hint');
+
+        // 初始化游戏
+        function initGame() {
+            updatePlayerPosition();
+            setupEventListeners();
+            gameLoop();
+            
+            // 显示控制台提示
+            setTimeout(() => {
+                consoleHint.style.display = 'block';
+            }, 3000);
+            
+            // 控制台初始消息
+            setTimeout(() => {
+                console.log('%c[系统] 检测到未授权实体在坐标 (x: 400, y: 0)', 'color: red; font-weight: bold;');
+                console.log('%c[Leo] 等等...有人在那里？', 'color: #4ecca3; font-weight: bold;');
+                console.log('%c[Leo] 你能看到这条消息吗？按F12打开开发者工具。', 'color: #4ecca3;');
+            }, 1000);
+        }
+
+        // 更新玩家位置
+        function updatePlayerPosition() {
+            playerEl.style.left = gameState.player.x + 'px';
+            playerEl.style.bottom = gameState.player.y + 'px';
+            
+            // 更新调试信息
+            document.getElementById('player-x').textContent = gameState.player.x;
+            document.getElementById('player-y').textContent = gameState.player.y;
+            document.getElementById('jump-power').textContent = gameState.player.jumpPower;
+            
+            // 检查是否接近无形墙
+            if (gameState.player.x > 350 && gameState.player.x < 400 && !gameState.isWallRemoved) {
+                document.getElementById('leo-message').style.display = 'block';
+            }
+            
+            // 检查是否接近跳跃板
+            if (gameState.player.x > 600 && gameState.player.x < 700 && gameState.player.y < 110 && !gameState.isJumpBoosted) {
+                document.getElementById('jump-message').style.display = 'block';
+            }
+            
+            // 检查是否到达出口
+            if (gameState.player.x > 710 && gameState.levelCompleted) {
+                document.getElementById('success-message').style.display = 'block';
+                document.getElementById('next-level-btn').style.display = 'block';
+            }
+        }
+
+        // 设置事件监听
+        function setupEventListeners() {
+            document.addEventListener('keydown', handleKeyDown);
+            document.addEventListener('keyup', handleKeyUp);
+        }
+
+        // 键盘按下处理
+        function handleKeyDown(e) {
+            if (gameState.levelCompleted) return;
+            
+            switch(e.key) {
+                case 'ArrowLeft':
+                    gameState.player.velocityX = -5;
+                    break;
+                case 'ArrowRight':
+                    gameState.player.velocityX = 5;
+                    break;
+                case ' ':
+                    if (!gameState.player.isJumping && gameState.player.y <= 20) {
+                        gameState.player.velocityY = gameState.player.jumpPower;
+                        gameState.player.isJumping = true;
+                    }
+                    break;
+            }
+        }
+
+        // 键盘释放处理
+        function handleKeyUp(e) {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                gameState.player.velocityX = 0;
+            }
+        }
+
+        // 游戏主循环
+        function gameLoop() {
+            // 更新玩家位置
+            gameState.player.x += gameState.player.velocityX;
+            gameState.player.y += gameState.player.velocityY;
+            
+            // 应用重力
+            gameState.player.velocityY -= gameState.gravity;
+            
+            // 地面碰撞检测
+            if (gameState.player.y < 20) {
+                gameState.player.y = 20;
+                gameState.player.velocityY = 0;
+                gameState.player.isJumping = false;
+            }
+            
+            // 边界检测
+            if (gameState.player.x < 0) gameState.player.x = 0;
+            if (gameState.player.x > 770) gameState.player.x = 770;
+            
+            // 无形墙碰撞检测
+            if (!gameState.isWallRemoved && 
+                gameState.player.x + gameState.player.width > 400 && 
+                gameState.player.x < 420) {
+                gameState.player.x = 400 - gameState.player.width;
+            }
+            
+            // 更新显示
+            updatePlayerPosition();
+            
+            // 继续游戏循环
+            requestAnimationFrame(gameLoop);
+        }
+
+        // === 控制台可用的函数 ===
+        
+        // 移除无形墙
+        function removeWall() {
+            if (!gameState.isWallRemoved) {
+                gameState.isWallRemoved = true;
+                invisibleWall.style.display = 'none';
+                console.log('%c[系统] 无形墙已移除', 'color: green; font-weight: bold;');
+                console.log('%c[Leo] 干得好！现在你可以继续前进了。', 'color: #4ecca3;');
+                exitDoor.style.display = 'block';
+                
+                // 隐藏提示
+                consoleHint.style.display = 'none';
+            }
+        }
+        
+        // 增强跳跃力量
+        function boostJumpPower() {
+            if (!gameState.isJumpBoosted) {
+                gameState.player.jumpPower = 12;
+                gameState.isJumpBoosted = true;
+                document.getElementById('broken-jump-pad').style.background = '#4ecca3';
+                document.getElementById('broken-jump-pad').style.border = '1px solid #2e8b57';
+                console.log('%c[系统] 跳跃力量已增强至 12', 'color: green; font-weight: bold;');
+                console.log('%c[Leo] 很好！现在你应该能跳过去了。', 'color: #4ecca3;');
+            }
+        }
+        
+        // 完成关卡
+        function completeLevel() {
+            gameState.levelCompleted = true;
+            console.log('%c[系统] 关卡完成！', 'color: gold; font-weight: bold; font-size: 16px;');
+            console.log('%c[Leo] 令人印象深刻！你已经掌握了F.B.特工的基本技能。', 'color: #4ecca3;');
+            console.log('%c[Leo] 准备好进入下一关了吗？', 'color: #4ecca3;');
+        }
+
+        // === 界面函数 ===
+        
+        function hideMessage(messageId) {
+            document.getElementById(messageId).style.display = 'none';
+        }
+        
+        function showDebugInfo() {
+            debugInfo.style.display = debugInfo.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function resetLevel() {
+            gameState.player.x = 50;
+            gameState.player.y = 20;
+            gameState.player.velocityX = 0;
+            gameState.player.velocityY = 0;
+            gameState.isWallRemoved = false;
+            gameState.isJumpBoosted = false;
+            gameState.levelCompleted = false;
+            gameState.player.jumpPower = 5;
+            
+            invisibleWall.style.display = 'block';
+            exitDoor.style.display = 'none';
+            document.getElementById('broken-jump-pad').style.background = '#ff6b6b';
+            document.getElementById('broken-jump-pad').style.border = '1px dashed #ff0000';
+            
+            document.getElementById('success-message').style.display = 'none';
+            consoleHint.style.display = 'block';
+            
+            console.clear();
+            console.log('%c[系统] 关卡已重置', 'color: orange; font-weight: bold;');
+        }
+        
+        function goToNextLevel() {
+            alert("Level 2 正在开发中！这是F.B.游戏的演示版本。");
+            // 实际游戏中这里会跳转到 level2.html
+            // window.location.href = 'level2.html';
+        }
+
+        // 初始化游戏
+        window.onload = initGame;
+
+        // 将函数暴露给全局作用域，以便在控制台调用
+        window.removeWall = removeWall;
+        window.boostJumpPower = boostJumpPower;
+        window.completeLevel = completeLevel;
+
+        // 添加控制台提示
+        console.log('%c欢迎来到 F.B. Level 1!', 'color: #8B4513; font-size: 18px; font-weight: bold;');
+        console.log('使用以下命令与游戏交互:');
+        console.log('- removeWall() - 移除无形墙');
+        console.log('- boostJumpPower() - 增强跳跃力量');
+        console.log('- completeLevel() - 手动完成关卡');
+        console.log('- resetLevel() - 重置关卡');
+    </script>
+</body>
+</html>
