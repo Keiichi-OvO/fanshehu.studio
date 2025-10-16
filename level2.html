@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F.B. - Level 2: CSS迷宫</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: #e6e6e6;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #8B4513;
+            border-radius: 10px;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        #css-maze {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: #0f3460;
+            border: 3px solid #8B4513;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .maze-wall {
+            position: absolute;
+            background: #8B4513;
+            border: 2px outset #CD853F;
+        }
+
+        #player {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #4ecca3;
+            border-radius: 50%;
+            z-index: 10;
+            transition: all 0.2s;
+            box-shadow: 0 0 10px #4ecca3;
+        }
+
+        .key {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: gold;
+            border-radius: 50%;
+            z-index: 5;
+            animation: glow 2s infinite alternate;
+        }
+
+        .door {
+            position: absolute;
+            background: #ff6b6b;
+            border: 2px solid #ff0000;
+            z-index: 5;
+        }
+
+        #exit {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: #4ecca3;
+            border: 3px solid #2e8b57;
+            border-radius: 50%;
+            z-index: 5;
+            display: none;
+            animation: pulse 2s infinite;
+        }
+
+        .info-panel {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border: 2px solid #8B4513;
+            border-radius: 10px;
+        }
+
+        .code-editor {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+            height: 200px;
+            overflow-y: auto;
+        }
+
+        .hint {
+            background: rgba(139, 69, 19, 0.3);
+            padding: 10px;
+            border-left: 3px solid #8B4513;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        button {
+            background: #8B4513;
+            color: white;
+            border: 1px outset #CD853F;
+            padding: 10px 15px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background: #A0522D;
+        }
+
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 30px;
+            border: 3px solid #8B4513;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+            max-width: 500px;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 5px gold; }
+            to { box-shadow: 0 0 20px gold; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .invisible {
+            opacity: 0.3;
+        }
+
+        .rotated {
+            transform: rotate(45deg);
+        }
+
+        .debug-panel {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>F.B. - Level 2: CSS迷宫</h1>
+        <p>使用CSS魔法来改变迷宫的结构！</p>
+    </div>
+
+    <div class="game-container">
+        <div id="css-maze">
+            <!-- 迷宫墙壁 -->
+            <div class="maze-wall" style="left: 0; top: 0; width: 100%; height: 20px;"></div>
+            <div class="maze-wall" style="left: 0; top: 0; width: 20px; height: 100%;"></div>
+            <div class="maze-wall" style="right: 0; top: 0; width: 20px; height: 100%;"></div>
+            <div class="maze-wall" style="left: 0; bottom: 0; width: 100%; height: 20px;"></div>
+            
+            <!-- 迷宫内部墙壁 -->
+            <div id="wall-1" class="maze-wall" style="left: 100px; top: 50px; width: 200px; height: 20px;"></div>
+            <div id="wall-2" class="maze-wall" style="left: 300px; top: 100px; width: 20px; height: 150px;"></div>
+            <div id="wall-3" class="maze-wall invisible" style="left: 200px; top: 200px; width: 150px; height: 20px;"></div>
+            <div id="wall-4" class="maze-wall" style="left: 400px; top: 150px; width: 20px; height: 200px;"></div>
+            <div id="wall-5" class="maze-wall rotated" style="left: 500px; top: 300px; width: 120px; height: 20px;"></div>
+            
+            <!-- 可收集的钥匙 -->
+            <div id="key-1" class="key" style="left: 150px; top: 100px;"></div>
+            <div id="key-2" class="key" style="left: 350px; top: 300px;"></div>
+            
+            <!-- 需要钥匙的门 -->
+            <div id="door-1" class="door" style="left: 250px; top: 180px; width: 60px; height: 20px;"></div>
+            <div id="door-2" class="door" style="left: 450px; top: 250px; width: 20px; height: 60px;"></div>
+            
+            <!-- 玩家 -->
+            <div id="player" style="left: 30px; top: 30px;"></div>
+            
+            <!-- 出口 -->
+            <div id="exit" style="right: 50px; bottom: 50px;"></div>
+        </div>
+
+        <div class="info-panel">
+            <h3>CSS控制台</h3>
+            <div class="code-editor" id="css-code">
+/* 可用的CSS命令：
+- makeVisible('element-id')
+- removeRotation('element-id')  
+- changeColor('element-id', 'color')
+- teleportPlayer(x, y)
+- collectKey('key-id')
+- openDoor('door-id')
+*/
+            </div>
+            
+            <div class="hint">
+                <strong>提示：</strong> 在控制台输入CSS命令来改变迷宫！
+                <br>按F12打开开发者工具
+            </div>
+            
+            <button onclick="showHint()">显示提示</button>
+            <button onclick="resetLevel()">重置关卡</button>
+            
+            <div class="debug-panel">
+                玩家位置: (<span id="player-pos">30,30</span>)
+                <br>已收集钥匙: <span id="keys-collected">0</span>/2
+                <br>已打开门: <span id="doors-opened">0</span>/2
+            </div>
+        </div>
+    </div>
+
+    <!-- 消息弹窗 -->
+    <div id="welcome-message" class="message">
+        <h3>欢迎来到CSS迷宫！</h3>
+        <p>这个迷宫的墙壁和门可以通过CSS命令来控制。</p>
+        <p>使用控制台修改CSS属性来找到通往出口的路！</p>
+        <button onclick="hideMessage('welcome-message')">开始探索</button>
+    </div>
+
+    <div id="key-message" class="message">
+        <h3>钥匙已收集！</h3>
+        <p>你找到了一把钥匙！现在可以打开对应的门了。</p>
+        <p>在控制台输入: <code>openDoor('door-1')</code></p>
+        <button onclick="hideMessage('key-message')">确定</button>
+    </div>
+
+    <div id="success-message" class="message">
+        <h3>恭喜！</h3>
+        <p>你成功通过了CSS迷宫！</p>
+        <p>你已经掌握了：</p>
+        <ul style="text-align: left;">
+            <li>CSS选择器和属性修改</li>
+            <li>DOM元素样式操作</li>
+            <li>通过代码改变视觉布局</li>
+        </ul>
+        <button onclick="goToNextLevel()">进入 Level 3</button>
+    </div>
+
+    <script>
+        // 游戏状态
+        const gameState = {
+            player: { x: 30, y: 30 },
+            keys: { key1: false, key2: false },
+            doors: { door1: false, door2: false },
+            levelCompleted: false
+        };
+
+        // 初始化游戏
+        function initGame() {
+            setupEventListeners();
+            updatePlayerPosition();
+            document.getElementById('welcome-message').style.display = 'block';
+            
+            // 控制台欢迎信息
+            setTimeout(() => {
+                console.log('%c=== F.B. Level 2: CSS迷宫 ===', 'color: #8B4513; font-size: 16px; font-weight: bold;');
+                console.log('%c使用这些CSS命令来改变迷宫：', 'color: #4ecca3;');
+                console.log('makeVisible("wall-3") - 让隐形墙壁可见');
+                console.log('removeRotation("wall-5") - 移除墙壁旋转');
+                console.log('changeColor("door-1", "green") - 改变门颜色');
+                console.log('teleportPlayer(400, 400) - 传送玩家');
+                console.log('collectKey("key-1") - 收集钥匙');
+                console.log('openDoor("door-1") - 打开门');
+            }, 1000);
+        }
+
+        // 设置事件监听
+        function setupEventListeners() {
+            document.addEventListener('keydown', handleKeyPress);
+        }
+
+        // 键盘控制
+        function handleKeyPress(e) {
+            if (gameState.levelCompleted) return;
+            
+            const step = 10;
+            let newX = gameState.player.x;
+            let newY = gameState.player.y;
+            
+            switch(e.key) {
+                case 'ArrowUp': newY -= step; break;
+                case 'ArrowDown': newY += step; break;
+                case 'ArrowLeft': newX -= step; break;
+                case 'ArrowRight': newX += step; break;
+            }
+            
+            // 碰撞检测
+            if (!checkCollision(newX, newY)) {
+                gameState.player.x = newX;
+                gameState.player.y = newY;
+                updatePlayerPosition();
+                checkInteractions();
+            }
+        }
+
+        // 碰撞检测
+        function checkCollision(x, y) {
+            const playerSize = 30;
+            const walls = document.querySelectorAll('.maze-wall');
+            const doors = document.querySelectorAll('.door:not(.open)');
+            
+            const elements = [...walls, ...doors];
+            
+            for (let element of elements) {
+                const rect = element.getBoundingClientRect();
+                const mazeRect = document.getElementById('css-maze').getBoundingClientRect();
+                
+                const wallX = rect.left - mazeRect.left;
+                const wallY = rect.top - mazeRect.top;
+                const wallWidth = rect.width;
+                const wallHeight = rect.height;
+                
+                if (x < wallX + wallWidth &&
+                    x + playerSize > wallX &&
+                    y < wallY + wallHeight &&
+                    y + playerSize > wallY) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // 更新玩家位置
+        function updatePlayerPosition() {
+            const player = document.getElementById('player');
+            player.style.left = gameState.player.x + 'px';
+            player.style.top = gameState.player.y + 'px';
+            
+            document.getElementById('player-pos').textContent = 
+                `${gameState.player.x},${gameState.player.y}`;
+        }
+
+        // 检查交互（钥匙、门、出口）
+        function checkInteractions() {
+            checkKeyCollection();
+            checkDoorProximity();
+            checkExitReached();
+        }
+
+        // 检查钥匙收集
+        function checkKeyCollection() {
+            const keys = document.querySelectorAll('.key');
+            keys.forEach(key => {
+                const rect = key.getBoundingClientRect();
+                const mazeRect = document.getElementById('css-maze').getBoundingClientRect();
+                
+                const keyX = rect.left - mazeRect.left;
+                const keyY = rect.top - mazeRect.top;
+                
+                if (Math.abs(gameState.player.x - keyX) < 25 && 
+                    Math.abs(gameState.player.y - keyY) < 25) {
+                    
+                    const keyId = key.id;
+                    if (!gameState.keys[keyId]) {
+                        gameState.keys[keyId] = true;
+                        key.style.display = 'none';
+                        document.getElementById('keys-collected').textContent = 
+                            Object.values(gameState.keys).filter(Boolean).length;
+                        
+                        document.getElementById('key-message').style.display = 'block';
+                        console.log(`%c[系统] 收集了 ${keyId}`, 'color: gold;');
+                    }
+                }
+            });
+        }
+
+        // 检查门接近
+        function checkDoorProximity() {
+            // 当玩家接近已打开的门时给予提示
+        }
+
+        // 检查是否到达出口
+        function checkExitReached() {
+            const exit = document.getElementById('exit');
+            if (exit.style.display !== 'block') return;
+            
+            const rect = exit.getBoundingClientRect();
+            const mazeRect = document.getElementById('css-maze').getBoundingClientRect();
+            
+            const exitX = rect.left - mazeRect.left;
+            const exitY = rect.top - mazeRect.top;
+            
+            if (Math.abs(gameState.player.x - exitX) < 35 && 
+                Math.abs(gameState.player.y - exitY) < 35) {
+                completeLevel();
+            }
+        }
+
+        // === CSS命令函数 ===
+        
+        function makeVisible(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.remove('invisible');
+                console.log(`%c[CSS] ${elementId} 现在可见了`, 'color: #4ecca3;');
+            }
+        }
+        
+        function removeRotation(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.remove('rotated');
+                console.log(`%c[CSS] ${elementId} 旋转已移除`, 'color: #4ecca3;');
+            }
+        }
+        
+        function changeColor(elementId, color) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.style.background = color;
+                console.log(`%c[CSS] ${elementId} 颜色改为 ${color}`, 'color: #4ecca3;');
+            }
+        }
+        
+        function teleportPlayer(x, y) {
+            gameState.player.x = x;
+            gameState.player.y = y;
+            updatePlayerPosition();
+            console.log(`%c[CSS] 玩家传送到 (${x}, ${y})`, 'color: #4ecca3;');
+        }
+        
+        function collectKey(keyId) {
+            const key = document.getElementById(keyId);
+            if (key && !gameState.keys[keyId]) {
+                gameState.keys[keyId] = true;
+                key.style.display = 'none';
+                document.getElementById('keys-collected').textContent = 
+                    Object.values(gameState.keys).filter(Boolean).length;
+                console.log(`%c[CSS] 收集了 ${keyId}`, 'color: gold;');
+            }
+        }
+        
+        function openDoor(doorId) {
+            const door = document.getElementById(doorId);
+            if (door && !gameState.doors[doorId]) {
+                // 检查是否有对应的钥匙
+                const requiredKey = doorId.replace('door', 'key');
+                if (gameState.keys[requiredKey]) {
+                    door.classList.add('open');
+                    door.style.background = '#4ecca3';
+                    gameState.doors[doorId] = true;
+                    document.getElementById('doors-opened').textContent = 
+                        Object.values(gameState.doors).filter(Boolean).length;
+                    console.log(`%c[CSS] ${doorId} 已打开`, 'color: green;');
+                    
+                    // 检查是否可以显示出口
+                    if (Object.values(gameState.doors).every(Boolean)) {
+                        document.getElementById('exit').style.display = 'block';
+                        console.log('%c[系统] 出口已开启！', 'color: gold; font-weight: bold;');
+                    }
+                } else {
+                    console.log(`%c[错误] 需要 ${requiredKey} 来打开这扇门`, 'color: red;');
+                }
+            }
+        }
+
+        // 完成关卡
+        function completeLevel() {
+            gameState.levelCompleted = true;
+            document.getElementById('success-message').style.display = 'block';
+            console.log('%c[系统] Level 2 完成！', 'color: gold; font-size: 16px; font-weight: bold;');
+        }
+
+        // 工具函数
+        function hideMessage(messageId) {
+            document.getElementById(messageId).style.display = 'none';
+        }
+        
+        function showHint() {
+            alert('提示：\n1. 使用 makeVisible("wall-3") 让隐形墙壁可见\n2. 使用 removeRotation("wall-5") 修正倾斜的墙壁\n3. 收集两把钥匙打开所有门\n4. 找到出口！');
+        }
+        
+        function resetLevel() {
+            gameState.player = { x: 30, y: 30 };
+            gameState.keys = { key1: false, key2: false };
+            gameState.doors = { door1: false, door2: false };
+            gameState.levelCompleted = false;
+            
+            // 重置所有元素
+            document.querySelectorAll('.key').forEach(key => key.style.display = 'block');
+            document.querySelectorAll('.door').forEach(door => {
+                door.classList.remove('open');
+                door.style.background = '#ff6b6b';
+            });
+            document.getElementById('wall-3').classList.add('invisible');
+            document.getElementById('wall-5').classList.add('rotated');
+            document.getElementById('exit').style.display = 'none';
+            
+            updatePlayerPosition();
+            document.getElementById('keys-collected').textContent = '0';
+            document.getElementById('doors-opened').textContent = '0';
+            
+            console.clear();
+            console.log('%c[系统] Level 2 已重置', 'color: orange;');
+        }
+        
+        function goToNextLevel() {
+            alert("Level 3 正在开发中！\n下一关将涉及JavaScript事件和交互。");
+        }
+
+        // 初始化游戏
+        window.onload = initGame;
+
+        // 暴露函数到全局作用域
+        window.makeVisible = makeVisible;
+        window.removeRotation = removeRotation;
+        window.changeColor = changeColor;
+        window.teleportPlayer = teleportPlayer;
+        window.collectKey = collectKey;
+        window.openDoor = openDoor;
+    </script>
+</body>
+</html>

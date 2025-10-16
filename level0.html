@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>反射狐工作室 - 招聘 (测试页v0.9)</title>
+    <style>
+        body {
+            font-family: 'SimSun', '宋体', serif;
+            background-color: #c0c0c0;
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAEklEQVQImWNgYGD4z4AE/gMADCMBCl5XeJAAAAAASUVORK5CYII=');
+            color: #000;
+            margin: 20px;
+            line-height: 1.5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #e8e8e8;
+            border: 2px outset #fff;
+            padding: 20px;
+            box-shadow: 5px 5px 10px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #8B4513;
+            font-size: 28px;
+            text-shadow: 2px 2px 0px #c0c0c0;
+            margin-bottom: 5px;
+        }
+        
+        .logo-placeholder {
+            text-align: center;
+            background-color: #d0d0d0;
+            border: 1px dashed #808080;
+            padding: 10px;
+            margin: 10px 0;
+            font-style: italic;
+        }
+        
+        h2 {
+            color: #8B4513;
+            border-bottom: 1px dotted #000;
+            padding-bottom: 5px;
+        }
+        
+        .game-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #8B4513;
+            margin: 15px 0;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .game-subtitle {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            margin-top: -10px;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+        
+        .job-desc {
+            background-color: #f0f0f0;
+            border: 1px inset #fff;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .requirements {
+            background-color: #f8f8f8;
+            border-left: 5px solid #8B4513;
+            padding: 10px 15px;
+            margin: 15px 0;
+        }
+        
+        .test-button {
+            display: block;
+            width: 300px;
+            margin: 20px auto;
+            padding: 15px;
+            background: linear-gradient(to bottom, #D2691E, #8B4513);
+            color: #fff;
+            border: 3px outset #CD853F;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            text-shadow: 1px 1px 0px #000;
+            animation: blink 1.5s infinite;
+        }
+        
+        .test-button:hover {
+            background: linear-gradient(to bottom, #DEB887, #A0522D);
+        }
+        
+        .test-button:active {
+            border: 3px inset #CD853F;
+        }
+        
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .button-note {
+            text-align: center;
+            font-size: 12px;
+            color: #606060;
+            margin-top: -10px;
+        }
+        
+        .about-us {
+            margin-top: 30px;
+            padding: 10px;
+            background-color: #F5F5DC;
+            border: 1px dotted #8B4513;
+        }
+        
+        .clue {
+            margin-top: 30px;
+            text-align: right;
+            font-size: 14px;
+            color: #c0c0c0;
+            user-select: none;
+        }
+        
+        .clue:hover {
+            color: #606060;
+        }
+        
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #808080;
+            border-top: 1px solid #a0a0a0;
+            padding-top: 10px;
+        }
+        
+        .construction {
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .marquee {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            box-sizing: border-box;
+            background-color: #FFEBCD;
+            color: #8B4513;
+            padding: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .marquee span {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee 15s linear infinite;
+        }
+        
+        @keyframes marquee {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(-100%, 0); }
+        }
+        
+        .fox-icon {
+            text-align: center;
+            font-size: 40px;
+            margin: 10px 0;
+        }
+        
+        .code-block {
+            background-color: #2b2b2b;
+            color: #f8f8f8;
+            font-family: 'Courier New', monospace;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="construction">
+            <img src="data:image/gif;base64,R0lGODlhEAAQAPIAAAAAAP///9bW1v7+/uLi4sTExP39/RkZGSkpKSH5BAEAAAAALAAAAAAQABAAAAMiCLrc/jDKSatlQtScN8/oCwBYF4ZAWI5oqZ5s675kLM9HAgA7" alt="Under Construction">
+        </div>
+        
+        <div class="marquee">
+            <span>!!! 网站正在建设中 !!! 欢迎测试人员 !!!</span>
+        </div>
+        
+        <div class="fox-icon">🦊</div>
+        
+        <h1>反射狐游戏工作室</h1>
+        
+        <div class="logo-placeholder">
+            &lt;此处本应有一张很酷的狐狸Logo图片，但它好像加载失败了&gt;
+        </div>
+        
+        <h2>招聘：高级游戏漏洞分析员</h2>
+        
+        <div class="game-title">F.B.</div>
+        
+        
+        <div class="job-desc">
+            <p><strong>职位描述：</strong></p>
+            <p>我们正在开发一款革命性的平台解谜游戏<strong>《F.B.》</strong>，目前进入最终测试阶段。我们需要一位嗅觉敏锐的专家，来帮助我们寻找并理解游戏中的各种技术问题。</p>
+            
+            <div class="code-block">
+                // 项目代号: F.B.<br>
+                // 任务: 在混沌中寻找秩序<br>
+                // 状态: 开发中...有大量"特性"待发现
+            </div>
+        </div>
+        
+        <div class="requirements">
+            <p><strong>我们希望你：</strong></p>
+            <ul>
+                <li>对细节有<strong>异于常人</strong>的洞察力。</li>
+                <li>不局限于常规测试流程，能创造性地绕过障碍。</li>
+                <li>拥有耐心，因为我们的测试环境可能不太稳定。</li>
+                <li>能理解"漏洞"有时是另一种"特性"的哲学。</li>
+                <li>像狐狸一样<strong>机智敏锐</strong>，能够从不同角度审视问题。</li>
+                <li>具备<strong>F.B.</strong>精神 - 在表象之下寻找真相。</li>
+            </ul>
+        </div>
+        
+        <div id="testButton" class="test-button">开始资质测试</div>
+        <div class="button-note">（如无反应，请反复点击。这很正常。）</div>
+        
+        <div class="about-us">
+            <p><strong>关于我们：</strong></p>
+            <p>反射狐工作室是一个充满智慧与创造力的独立团队。我们专注于开发需要玩家<strong>深入思考、探索边界</strong>的游戏体验。</p>
+            <p>我们的最新项目<strong>《F.B.》</strong>不仅仅是一个游戏，更是一种思维方式——教导玩家如何在混沌中寻找模式，在无序中发现秩序。</p>
+        </div>
+        
+        <div class="clue">
+            <p>&lt;网站管理员 &gt;</p>
+            <!-- 
+                有时候，最直接的路走不通，不妨看看代码本身。
+                真正的入口隐藏在表象之下，就像狐狸的足迹。
+                
+                要进入真正的测试，你需要：
+                1. 查看这个页面的源代码
+                2. 找到被注释掉的真正入口链接
+                3. 删除注释标签使其生效
+                4. 刷新页面并点击新出现的链接
+                
+                祝你好运，未来的漏洞猎人！
+            -->
+        </div>
+        
+        <div class="footer">
+            <p>版权所有 © 1996 反射狐工作室 | 访问次数: <img src="data:image/gif;base64,R0lGODlhBwAHAIABAAAAAP///yH5BAEAAAEALAAAAAAHAAcAAAIMjI+py+0Po5y02gUAOw==" alt="计数器"> 2025</p>
+            <p>项目F.B. - Find the Truth Behind the Bugs</p>
+        </div>
+    </div>
+
+    <script>
+        // 使按钮无效
+        document.getElementById('testButton').addEventListener('click', function() {
+            // 创建一个假的加载效果
+            this.style.background = 'linear-gradient(to bottom, #808080, #404040)';
+            this.innerHTML = '加载中...';
+            
+            // 短暂延迟后恢复原状
+            setTimeout(() => {
+                this.style.background = 'linear-gradient(to bottom, #D2691E, #8B4513)';
+                this.innerHTML = '开始资质测试';
+                
+                // 添加一些随机的小故障效果
+                this.style.transform = 'translateX(' + (Math.random() * 10 - 5) + 'px)';
+                setTimeout(() => {
+                    this.style.transform = 'translateX(0)';
+                }, 100);
+            }, 800);
+        });
+        
+        // 添加一些90年代风格的背景音乐（注释掉，避免自动播放打扰）
+        /*
+        var audio = new Audio('data:audio/midi;base64,TVRoZAAAAAYAAQABAYBNVHJrAAAAFwD/WAQEAhgIAPxYBAD8/Pz8/Pz8/Pz8ARkA');
+        audio.loop = true;
+        audio.volume = 0.1;
+        audio.play().catch(e => console.log('自动播放被阻止'));
+        */
+    </script>
+
+<!-- 
+    恭喜你找到了隐藏的入口！
+    要激活真正的测试链接，请删除下面的注释标签：
+-->
+<!--
+    <div id="realEntry" style="text-align: center; margin: 20px;">
+        <a href="level1.html" style="display: inline-block; padding: 15px 30px; background: #8B4513; color: white; text-decoration: none; font-size: 18px; border: 2px outset #CD853F;">
+            >>> 进入真正的F.B.测试 <<<
+        </a>
+        <p style="font-size: 12px; color: #666; margin-top: 5px;">
+            （你找到了！这才是真正的入口。欢迎来到F.B.的世界。）
+        </p>
+    </div>
+-->
+</body>
+</html>
